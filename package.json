@@ -1,0 +1,22 @@
+{
+  "name": "blotjs-gpt-slack-app",
+  "version": "1.0.0",
+  "description": "Bolt.jsを活用してSlackにOpenAIを活用したBotを作成する",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/couragenki/blotjs-gpt-slack-app.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/couragenki/blotjs-gpt-slack-app/issues"
+  },
+  "homepage": "https://github.com/couragenki/blotjs-gpt-slack-app#readme",
+  "dependencies": {
+    "@slack/bolt": "^3.12.2"
+  }
+}
