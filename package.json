@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/couragenki/blotjs-gpt-slack-app#readme",
   "dependencies": {
-    "@slack/bolt": "^3.12.2"
+    "@slack/bolt": "^3.12.2",
+    "openai": "^3.1.0"
   }
 }
