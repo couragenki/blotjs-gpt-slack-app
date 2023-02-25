@@ -17,7 +17,7 @@ app.message("hello", async ({ message, say }) => {
 // ここからOPEN_AIーーーーーーーーーーーーーーーーーーーーーーーー
 
 app.message("gpt召喚", async ({ message, say }) => {
-  await say(`<@${message.user}> お呼びでしょうか？`);
+  await say(`<@${message.user}> お呼びでしょうか？ こちらのスレッドで質問をしてください。`);
 });
 
 const postAsGptBot = async ({
