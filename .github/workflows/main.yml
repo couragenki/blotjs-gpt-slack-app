@@ -1,0 +1,23 @@
+name: blotjs-gpt-slack-app
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+jobs:
+    Deploy:
+        name: Deploy
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repo
+              uses: actions/checkout@v3
+            - name: setup Node
+              uses: actions/setup-node@v3
+              with:
+                  node-version: 14.18.0
+                  registry-url: "https://registry.npmjs.org"
+            - name: npm install
+              run: |
+                  npm install
+                  npm run start
