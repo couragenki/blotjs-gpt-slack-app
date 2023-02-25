@@ -4,7 +4,7 @@
   "description": "Bolt.jsを活用してSlackにOpenAIを活用したBotを作成する",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node app.js"
   },
   "repository": {
     "type": "git",
