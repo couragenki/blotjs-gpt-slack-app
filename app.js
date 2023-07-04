@@ -11,6 +11,7 @@ const app = new App({
 
 // Listens to incoming messages that contain "hello"
 app.message("hello gpt", async ({ message, say }) => {
+  console.log("hello gpt", message);
   await say(`Hey there <@${message.user}>!`);
 });
 
@@ -50,12 +51,12 @@ app.event("message", async ({ event, client, logger }) => {
     (a, b) => Number(a.ts) - Number(b.ts)
   );
 
-  // GPT Botへの返信でなければ何もしない
-  console.log(messages[0], "messages[0]");
-  if (!messages[0].bot_id === "B04QU3HD1N1") {
-    console.log("マッチ");
-    return;
-  }
+  // // GPT Botへの返信でなければ何もしない
+  // console.log(messages[0], "messages[0]");
+  // if (!messages[0].bot_id === "B04QU3HD1N1") {
+  //   console.log("マッチ");
+  //   return;
+  // }
 
   try {
     // Slackのレスポンス制約を回避するために、仮のメッセージを投稿する
