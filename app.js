@@ -198,6 +198,8 @@ ${text}
       frequency_penalty: 1,
     });
 
+    console.log(prompt, "prompt");
+
     const message = completions.data.choices[0].text;
 
     // 仮のメッセージを削除する
@@ -215,8 +217,6 @@ ${text}
         threadTs,
         text: message,
       });
-      await say(message);
-      console.log("発言DONE");
     } else {
       throw new Error("message is empty");
     }
