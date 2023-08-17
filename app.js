@@ -1,10 +1,13 @@
+require("dotenv").config();
 const { App } = require("@slack/bolt");
 const { Configuration, OpenAIApi } = require("openai");
+
+console.log(process.env.SLACK_SIGNING_SECRET);
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
   signingSecret: process.env.SLACK_SIGNING_SECRET,
-  socketMode: false,
+  socketMode: true,
   appToken: process.env.SLACK_APP_TOKEN,
   port: process.env.PORT || 3000,
 });
@@ -73,9 +76,13 @@ app.event("message", async ({ event, client, logger }) => {
     const prevMessageText =
       prevMessages.map((m) => `- ${m.text}`).join("\n") || "";
 
+    console.log(prevMessageText, "prevMessageText");
+    console.log(text, "text");
+
     // 回答メッセージの作成 with OpenAI
     const prompt = `
-あなたは優秀なSlackBotです。あなたの知識とこれまでの会話の内容を考慮した上で、今の質問に正確な回答をしてください。
+あなたは優秀なスマートフォンキャリアのアドバイザーです。
+あなたの知識とこれまでの会話の内容を考慮した上で、ユーザーにとってもっと適切なスマートフォンのキャリアに対する質問に答えなさい。
 
 ### これまでの会話:
 ${prevMessageText}
