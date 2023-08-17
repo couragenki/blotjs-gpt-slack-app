@@ -137,6 +137,7 @@ app.event("message", async ({ event, client, logger }) => {
       "LINEMO",
       "UQmobile",
       "Ymobile",
+      "該当なし",
     ];
     const foundCarriers = carriers.filter((carrier) =>
       mobileType.includes(carrier)
