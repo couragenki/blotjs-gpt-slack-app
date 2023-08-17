@@ -1,3 +1,4 @@
+const fs = require("fs");
 require("dotenv").config();
 const { App } = require("@slack/bolt");
 const { Configuration, OpenAIApi } = require("openai");
@@ -43,8 +44,6 @@ const openAIClient = new OpenAIApi(configuration);
 app.event("message", async ({ event, client, logger }) => {
   const { thread_ts: threadTs, bot_id: botId, text } = event;
 
-  console.log("イベント取得done", text, "text");
-
   // botの返信またはスレッドのメッセージでなければ何もしない
   if (botId || !threadTs) {
     return;
@@ -61,12 +60,11 @@ app.event("message", async ({ event, client, logger }) => {
     (a, b) => Number(a.ts) - Number(b.ts)
   );
 
-  // // GPT Botへの返信でなければ何もしない
-  // console.log(messages[0], "messages[0]");
-  // if (!messages[0].bot_id === "B04QU3HD1N1") {
-  //   console.log("マッチ");
-  //   return;
-  // }
+  // GPT Botへの返信でなければ何もしない
+  console.log(messages[0], "messages[0]");
+  if (!messages[0].bot_id === "B05G3C4EQ4Q") {
+    return;
+  }
 
   try {
     // Slackのレスポンス制約を回避するために、仮のメッセージを投稿する
@@ -102,8 +100,8 @@ app.event("message", async ({ event, client, logger }) => {
 5. ahamo
 6. povo
 7. LINEMO
-8. UQ mobile
-9. Y!mobile
+8. UQmobile
+9. Ymobile
 10. 該当なし
 
 ## 回答例
@@ -138,10 +136,51 @@ app.event("message", async ({ event, client, logger }) => {
 
     console.log(mobileType, "mobileType");
 
+    const carriers = [
+      "docomo",
+      "SoftBank",
+      "au",
+      "楽天モバイル",
+      "ahamo",
+      "povo",
+      "LINEMO",
+      "UQmobile",
+      "Ymobile",
+    ];
+
+    // キャリア情報とヒットするものを検索
+    const foundCarriers = carriers.filter((carrier) =>
+      mobileType.includes(carrier)
+    );
+
+    let jsonData;
+    // ヒットしたキャリアのJSONファイルを読み込む
+    foundCarriers.forEach((carrier) => {
+      console.log(carrier, "carrier");
+      const fileName = `./resources/${carrier}.json`;
+      console.log(fileName, "fileName");
+
+      fs.readFile(fileName, "utf8", (err, data) => {
+        if (err) {
+          console.error(`エラーが発生しました: ${err}`);
+          return;
+        }
+        // JSONをパースする
+        jsonData = JSON.parse(data);
+
+        // ここでjsonDataを使用して任意の処理を行うことができます。
+        console.log(jsonData);
+      });
+    });
+
     // 回答メッセージの作成
     const prompt = `
 あなたは優秀なスマートフォンキャリアのアドバイザーです。
 あなたの知識とこれまでの会話の内容を考慮した上で、ユーザーにとってもっと適切なスマートフォンのキャリアに対する質問に答えなさい。
+またその際、最新の補足情報を共有するのでその情報が正しいものとし、その内容で回答しなさい。
+
+## 最新の補足情報
+${jsonData}
 
 ### これまでの会話:
 ${prevMessageText}
@@ -151,7 +190,6 @@ ${text}
 
 ### 今の質問の回答:
 `;
-
     const completions = await openAIClient.createCompletion({
       model: "text-davinci-003",
       prompt: prompt,
@@ -170,9 +208,7 @@ ${text}
 
     // 回答メッセージを投稿する
     if (message) {
-      console.log("実行まではできたよ");
-
-      デバッグ用に投稿を一時コメントアウトで停止;
+      // デバッグ用に投稿を一時コメントアウトで停止
       await postAsGptBot({
         client,
         channel: event.channel,
