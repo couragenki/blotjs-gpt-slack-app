@@ -90,7 +90,7 @@ app.event("message", async ({ event, client, logger }) => {
 もしも1~9の選択肢に該当するものがなければ『10. 該当なし』を選択しなさい。
 
 1. docomo
-2. SoftBank
+2. ソフトバンク
 3. au
 4. 楽天モバイル
 5. ahamo
@@ -129,7 +129,7 @@ app.event("message", async ({ event, client, logger }) => {
     const mobileType = checkMobileType.data.choices[0].text;
     const carriers = [
       "docomo",
-      "SoftBank",
+      "ソフトバンク",
       "au",
       "楽天モバイル",
       "ahamo",
