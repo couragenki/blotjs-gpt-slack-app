@@ -3,7 +3,17 @@ require("dotenv").config();
 const { App } = require("@slack/bolt");
 const { Configuration, OpenAIApi } = require("openai");
 
-console.log(process.env.SLACK_SIGNING_SECRET);
+const readJsonFile = async (fileName) => {
+  return new Promise((resolve, reject) => {
+    fs.readFile(fileName, "utf8", (err, data) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve(JSON.parse(data));
+    });
+  });
+};
 
 const app = new App({
   token: process.env.SLACK_BOT_TOKEN,
@@ -13,13 +23,9 @@ const app = new App({
   port: process.env.PORT || 3000,
 });
 
-// Listens to incoming messages that contain "hello"
 app.message("hello gpt", async ({ message, say }) => {
-  console.log("hello gpt", message);
   await say(`Hey there <@${message.user}>!`);
 });
-
-// ここからOPEN_AIーーーーーーーーーーーーーーーーーーーーーーーー
 
 app.message("gptに質問する", async ({ message, say }) => {
   await say(
@@ -44,30 +50,24 @@ const openAIClient = new OpenAIApi(configuration);
 app.event("message", async ({ event, client, logger }) => {
   const { thread_ts: threadTs, bot_id: botId, text } = event;
 
-  // botの返信またはスレッドのメッセージでなければ何もしない
   if (botId || !threadTs) {
     return;
   }
 
-  // スレッドのメッセージを取得
   const threadMessagesResponse = await client.conversations.replies({
     channel: event.channel,
     ts: threadTs,
   });
 
-  // console.log("メッセージの取得ができました", threadMessagesResponse);
   const messages = threadMessagesResponse.messages?.sort(
     (a, b) => Number(a.ts) - Number(b.ts)
   );
 
-  // GPT Botへの返信でなければ何もしない
-  console.log(messages[0], "messages[0]");
   if (!messages[0].bot_id === "B05G3C4EQ4Q") {
     return;
   }
 
   try {
-    // Slackのレスポンス制約を回避するために、仮のメッセージを投稿する
     const thinkingMessageResponse = await postAsGptBot({
       client,
       channel: event.channel,
@@ -75,14 +75,10 @@ app.event("message", async ({ event, client, logger }) => {
       text: "...",
     });
 
-    // 会話の履歴を取得して結合。最大6件まで
     const prevMessages =
       messages.length < 6 ? messages.slice(1, -1) : messages.slice(-6, -1);
     const prevMessageText =
       prevMessages.map((m) => `- ${m.text}`).join("\n") || "";
-
-    console.log(prevMessageText, "prevMessageText");
-    console.log(text, "text");
 
     const mobileTypePrompt = `
 ## 前提
@@ -122,7 +118,6 @@ app.event("message", async ({ event, client, logger }) => {
 ### 今回の質問:
 『${text}』
 `;
-    // ここで会話の内容からモバイルキャリアの情報抽出
     const checkMobileType = await openAIClient.createCompletion({
       model: "text-davinci-003",
       prompt: mobileTypePrompt,
@@ -131,11 +126,7 @@ app.event("message", async ({ event, client, logger }) => {
       frequency_penalty: 1,
     });
 
-    // 抽出結果を入力する
     const mobileType = checkMobileType.data.choices[0].text;
-
-    console.log(mobileType, "mobileType");
-
     const carriers = [
       "docomo",
       "SoftBank",
@@ -147,40 +138,25 @@ app.event("message", async ({ event, client, logger }) => {
       "UQmobile",
       "Ymobile",
     ];
-
-    // キャリア情報とヒットするものを検索
     const foundCarriers = carriers.filter((carrier) =>
       mobileType.includes(carrier)
     );
 
     let jsonData;
-    // ヒットしたキャリアのJSONファイルを読み込む
-    foundCarriers.forEach((carrier) => {
-      console.log(carrier, "carrier");
+    for (const carrier of foundCarriers) {
       const fileName = `./resources/${carrier}.json`;
-      console.log(fileName, "fileName");
+      try {
+        jsonData = await readJsonFile(fileName);
+      } catch (err) {
+        console.error(`エラーが発生しました: ${err}`);
+        return;
+      }
 
-      fs.readFile(fileName, "utf8", (err, data) => {
-        if (err) {
-          console.error(`エラーが発生しました: ${err}`);
-          return;
-        }
-        // JSONをパースする
-        jsonData = JSON.parse(data);
-
-        // ここでjsonDataを使用して任意の処理を行うことができます。
-        console.log(jsonData);
-      });
-    });
-
-    // 回答メッセージの作成
-    const prompt = `
+      const prompt = `
 あなたは優秀なスマートフォンキャリアのアドバイザーです。
-あなたの知識とこれまでの会話の内容を考慮した上で、ユーザーにとってもっと適切なスマートフォンのキャリアに対する質問に答えなさい。
-またその際、最新の補足情報を共有するのでその情報が正しいものとし、その内容で回答しなさい。
-
+（以下略）
 ## 最新の補足情報
-${jsonData}
+${JSON.stringify(jsonData, null, 2)}
 
 ### これまでの会話:
 ${prevMessageText}
@@ -190,51 +166,33 @@ ${text}
 
 ### 今の質問の回答:
 `;
-    const completions = await openAIClient.createCompletion({
-      model: "text-davinci-003",
-      prompt: prompt,
-      max_tokens: 1000,
-      top_p: 0.5,
-      frequency_penalty: 1,
-    });
 
-    console.log(prompt, "prompt");
+      const completions = await openAIClient.createCompletion({
+        model: "text-davinci-003",
+        prompt: prompt,
+        max_tokens: 1000,
+        top_p: 0.5,
+        frequency_penalty: 1,
+      });
 
-    const message = completions.data.choices[0].text;
+      const message = completions.data.choices[0].text;
+      await client.chat.delete({
+        channel: event.channel,
+        ts: thinkingMessageResponse.ts,
+      });
 
-    // 仮のメッセージを削除する
-    await client.chat.delete({
-      channel: event.channel,
-      ts: thinkingMessageResponse.ts,
-    });
-
-    // 回答メッセージを投稿する
-    if (message) {
-      // デバッグ用に投稿を一時コメントアウトで停止
       await postAsGptBot({
         client,
         channel: event.channel,
         threadTs,
         text: message,
       });
-    } else {
-      throw new Error("message is empty");
     }
-  } catch (e) {
-    logger.error(e);
-    await postAsGptBot({
-      client,
-      channel: event.channel,
-      threadTs,
-      text: "大変申し訳ございません。エラーです。別スレッドでやり直してください。",
-    });
+  } catch (error) {
+    logger.error(error);
   }
 });
 
-// ここまでOPEN_AIーーーーーーーーーーーーーーーーーーーーーーーー
-
-// スタート
-(async () => {
-  await app.start();
-  console.log("起動完了");
-})();
+app.start().then(() => {
+  console.log("App is running!");
+});
