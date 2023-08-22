@@ -120,7 +120,7 @@ app.event("message", async ({ event, client, logger }) => {
 `;
     const checkMobileType = await openAIClient.createCompletion({
       model: "text-davinci-003",
-      prompt: prompt,
+      prompt: mobileTypePrompt,
       max_tokens: 1000,
       top_p: 0.5,
       frequency_penalty: 1,
